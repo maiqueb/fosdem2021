@@ -66,14 +66,14 @@ podman run --rm -t \
     --name demo-nocaps \
     --cap-drop net_raw \
     capabilities-demo \
-    /capabilities-demo bind-to-device eth0 --port 800
+    /capabilities-demo bind-to-device tap0 --port 800
 
 # attempt to use the socket option SO_BINDTODEVICE *with* CAP_NET_RAW
 podman run --rm -t \
     --name demo-with-cap-net-raw \
     --cap-drop net_raw \
     capabilities-demo \
-    /capabilities-demo bind-to-device eth0 --port 800
+    /capabilities-demo bind-to-device tap0 --port 800
 ```
 
 ## Abusing CAP_NET_ADMIN ...
