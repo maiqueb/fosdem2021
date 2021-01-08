@@ -75,3 +75,34 @@ podman run --rm -t \
     capabilities-demo \
     /capabilities-demo bind-to-device eth0 --port 800
 ```
+
+## Abusing CAP_NET_ADMIN ...
+
+A malicious user could for instance run a DHCP server on a pod having
+CAP_NET_ADMIN to potentially highjack the network.
+
+Let's see how:
+```bash
+# create a veth pair
+ip l add sneaky-veth type veth peer sneaky-veth-br
+
+# plug one end to the docker bridge
+ip l set dev sneaky-veth-br master docker0
+
+# set ifaces up
+ip l set dev sneaky-veth up
+ip l set dev sneaky-veth-br up
+
+# start the dhcp-server
+podman run --rm -it \
+    --name dhcp-server \
+    --cap-add net_admin \
+    capabilities-demo \
+    /capabilities-demo start-dhcp-server tap0 \
+        --cidr 10.10.10.2/24 \
+        --ip-server 10.10.10.1 \
+        --ip-router 172.17.0.1
+
+# request an address on via the veth
+$ dhclient -v sneaky-veth
+```
