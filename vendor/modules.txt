@@ -3,12 +3,22 @@
 github.com/golang/glog
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
+# github.com/krolaw/dhcp4 v0.0.0-20190909130307-a50d88189771
+## explicit
+github.com/krolaw/dhcp4
+github.com/krolaw/dhcp4/conn
 # github.com/spf13/cobra v1.1.1
 ## explicit
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
 github.com/spf13/pflag
+# golang.org/x/net v0.0.0-20190620200207-3b0461eec859
+golang.org/x/net/bpf
+golang.org/x/net/internal/iana
+golang.org/x/net/internal/socket
+golang.org/x/net/ipv4
 # golang.org/x/sys v0.0.0-20210105210732-16f7687f5001
 ## explicit
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
+golang.org/x/sys/windows
