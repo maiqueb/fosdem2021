@@ -30,15 +30,38 @@ export CGO_ENABLED=0
 export GO111MODULE=on
 export GOFLAGS=-mod=vendor
 
+BIN_DIR = $(CURDIR)/build/_output/bin/
+export GOROOT=$(BIN_DIR)/go/
+export GOBIN=$(GOROOT)/bin/
+export PATH := $(GOBIN):$(PATH)
+GOFMT := $(GOBIN)/gofmt
+export GO := $(GOBIN)/go
+
 .ONESHELL:
 
-all: clean vendor container-build
+all: clean vendor format container-build
+
+$(GO):
+	hack/install-go.sh $(BIN_DIR) > /dev/null
+
+$(GOFMT): $(GO)
+
+fmt: $(GOFMT)
+	$(GOFMT) -d cmd/
+
+fmt-check: $(GOFMT)
+	$(GOFMT) -w cmd/
+
+vet: $(GO)
+	$(GO) vet ./cmd/...
 
 vendor: $(GO)
-	go mod tidy
-	go mod vendor
+	$(GO) mod tidy
+	$(GO) mod vendor
 
-container-build: vendor
+format: fmt fmt-check vet
+
+container-build: fmt-check vendor
 	$(CONTAINER_RUNTIME) build -t ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} -f ./build/Dockerfile .
 
 container-push: container-build
@@ -52,4 +75,6 @@ clean:
 	clean \
 	container-build \
 	container-push \
+	format \
 	vendor \
+	vet
