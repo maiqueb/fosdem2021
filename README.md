@@ -37,3 +37,41 @@ podman exec -it $net_admin_pid ip l set dev tap0 address 02:00:00:01:02:03
 podman exec -it $no_caps_pid   ip l set dev tap0 mtu 9000
 podman exec -it $net_admin_pid ip l set dev tap0 mtu 9000
 ```
+
+## CAP_NET_RAW demo
+
+This part of the demo will showcase how CAP_NET_RAW impacts network
+operations; we will create two containers (1 w/ CAP_NET_RAW; another without)
+and perform a set of operations.
+
+```bash
+# attempt to create a RAW socket without CAP_NET_RAW
+podman run --rm -it --name cap-net-raw-demo-dropped-cap \
+    --cap-drop net_raw \
+    capabilities-demo \
+    /capabilities-demo raw-socket tap0
+
+# attempt to create a RAW socket *with* CAP_NET_RAW
+podman run --rm -it --name cap-net-raw-demo \
+    capabilities-demo \
+    /capabilities-demo raw-socket tap0
+```
+
+CAP_NET_RAW is also required when requesting the `SO_BINDTODEVICE` socket
+option.
+
+```bash
+# attempt to use the socket option SO_BINDTODEVICE without CAP_NET_RAW
+podman run --rm -t \
+    --name demo-nocaps \
+    --cap-drop net_raw \
+    capabilities-demo \
+    /capabilities-demo bind-to-device eth0 --port 800
+
+# attempt to use the socket option SO_BINDTODEVICE *with* CAP_NET_RAW
+podman run --rm -t \
+    --name demo-with-cap-net-raw \
+    --cap-drop net_raw \
+    capabilities-demo \
+    /capabilities-demo bind-to-device eth0 --port 800
+```
