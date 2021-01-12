@@ -12,6 +12,7 @@ net_admin_container=$(
     podman run -itd --rm \
         --name with-cap-net-admin \
         --cap-add net_admin \
+        -v /dev/net/tun:/dev/net/tun \
         centos:8 bash
 )
 
