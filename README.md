@@ -13,40 +13,61 @@ net_admin_container=$(
         --name with-cap-net-admin \
         --cap-add net_admin \
         -v /dev/net/tun:/dev/net/tun \
-        centos:8 bash
+    centos:8 bash
 )
 
 # w/out CAP_NET_ADMIN
 no_caps_container=$(
-    docker run -itd --rm --name no-caps centos:8 bash
+    docker run -itd --rm \
+        --name no-caps \
+        -v /dev/net/tun:/dev/net/tun \
+    centos:8 bash
 )
 
 # get container PID of the capability-less container
 no_caps_pid=$(docker inspect no-caps -f '{{ .State.Pid }}')
 
 # create bridge
-docker exec -it $no_caps_container   ip link add br0 type bridge
+## works, since we have net_admin
 docker exec -it $net_admin_container ip link add br0 type bridge
+docker exec -it $net_admin_container ip link set dev br0 up
+
+## fails, since capability is missing
+docker exec -it $no_caps_container   ip link add br0 type bridge
+
+# create tap device
+## works, since we have net_admin
+docker exec -it $net_admin_container ip tuntap add dev tap0 mode tap
+## fails, since capability is missing
+docker exec -it $no_caps_container   ip tuntap add dev tap0 mode tap
 
 # create the tap & bridge on the container without CAP_NET_ADMIN
-nsenter -t $no_caps_pid -n   ip tuntap add dev tap0 mode tap user root
+# superuser is required for tapping into other namespaces
+nsenter -t $no_caps_pid -n ip tuntap add dev tap0 mode tap
+nsenter -t $no_caps_pid -n ip link add br0 type bridge
 
 # enslave tap device
-docker exec -it $no_caps_container \
-    ip link set dev tap0 master br0
+## works, since we have net_admin
 docker exec -it $net_admin_container \
+    ip link set dev tap0 master br0
+## fails, since capability is missing
+docker exec -it $no_caps_container \
     ip link set dev tap0 master br0
 
 # set MAC
+## works, since we have net_admin
+docker exec -it $net_admin_container \
+    ip l set dev tap0 address 02:00:00:01:02:03
+## fails, since capability is missing
 docker exec -it $no_caps_container \
     ip l set dev tap0 address 02:00:00:01:02:03
-docker exec -it $net_admin_container \
-    ip l set dev tap0 address 02:00:00:01:02:04
 
 # set MTU
-docker exec -it $no_caps_container \
-    ip l set dev tap0 mtu 9000
+## works, since we have net_admin
 docker exec -it $net_admin_container \
+    ip l set dev tap0 mtu 9000
+## fails, since capability is missing
+docker exec -it $no_caps_container \
     ip l set dev tap0 mtu 9000
 ```
 
