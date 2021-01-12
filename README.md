@@ -21,17 +21,15 @@ no_caps_container=$(
     docker run -itd --rm --name no-caps centos:8 bash
 )
 
-# get container PIDs
+# get container PID of the capability-less container
 no_caps_pid=$(docker inspect no-caps -f '{{ .State.Pid }}')
-net_admin_pid=$(docker inspect with-cap-net-admin -f '{{ .State.Pid }}')
 
 # create bridge
 docker exec -it $no_caps_container   ip link add br0 type bridge
 docker exec -it $net_admin_container ip link add br0 type bridge
 
-# create tap device - requires `privileged`, must be run from sudo
+# create the tap & bridge on the container without CAP_NET_ADMIN
 nsenter -t $no_caps_pid -n   ip tuntap add dev tap0 mode tap user root
-nsenter -t $net_admin_pid -n ip tuntap add dev tap0 mode tap user root
 
 # enslave tap device
 docker exec -it $no_caps_container \
