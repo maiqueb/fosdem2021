@@ -99,6 +99,7 @@ option. For this section, you should ssh into the KubeVirt ci node:
 ```bash
 $KUBEVIRT_REPO/cluster-up/ssh.sh node01
 
+# let's make the node a bit more 'usable'
 stty rows 28
 stty columns 146
 sudo groupadd docker
@@ -164,15 +165,18 @@ $ dhclient -v sneaky-veth
 ## How to get KubeVirt ci node running
 Clone the KubeVirt project:
 ```bash
-git clone git@github.com:kubevirt/kubevirt.git <kubevirt-repo-path>
+git clone git@github.com:kubevirt/kubevirt.git kubevirt
 ```
 
 Configure the environment:
 ```bash
-export KUBEVIRT_PROVIDER=k8s-1.19
-export KUBEVIRT_NUM_NODES=1
+$ export KUBEVIRT_PROVIDER=k8s-1.19
+$ export KUBEVIRT_NUM_NODES=1
 
-make cluster-up && make cluster-sync
+$ KUBEVIRT_REPO=kubevirt/
+$ cd KUBEVIRT_REPO
+$ make cluster-up && make cluster-sync
+$ cd -
 ```
 
 Push the locally built container to the KubeVirt CI node:
