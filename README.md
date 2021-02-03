@@ -156,9 +156,10 @@ $ dhclient -v sneaky-veth
 ```
 
 ## Dependencies
-Git
-Golang
-KubeVirt CI node running
+- Git
+- Golang
+- container runtime (docker / podman / ...)
+- KubeVirt CI node running
 
 ## How to get KubeVirt ci node running
 Clone the KubeVirt project:
