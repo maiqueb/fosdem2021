@@ -88,7 +88,6 @@ func main() {
 				}
 				return fmt.Errorf("cannot bind to interface %s: %v", ifaceName, err)
 			}
-			glog.Infof("Succeeded in binding to device %s, port %d", ifaceName, port)
 
 			saddr := unix.SockaddrInet6{Port: int(port)}
 			copy(saddr.Addr[:], net.IPv6unspecified)
