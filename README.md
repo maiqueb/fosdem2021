@@ -1,5 +1,9 @@
 # KubeVirt: privilege dropping one capability at a time - Fosdem2021
 
+These short examples were tested on the KubeVirt CI node. Instructions on how
+to get one running can be found in this
+[section](#how-to-get-kubevirt-ci-node-running).
+
 ## CAP_NET_ADMIN demo
 
 This part of the demo will showcase how CAP_NET_ADMIN impacts network
@@ -79,34 +83,45 @@ and perform a set of operations.
 
 ```bash
 # attempt to create a RAW socket without CAP_NET_RAW
-podman run --rm -it --name cap-net-raw-demo-dropped-cap \
+docker run --rm -it --name cap-net-raw-demo-dropped-cap \
     --cap-drop net_raw \
     capabilities-demo \
-    /capabilities-demo raw-socket tap0
+    /capabilities-demo raw-socket eth0
 
 # attempt to create a RAW socket *with* CAP_NET_RAW
-podman run --rm -it --name cap-net-raw-demo \
+docker run --rm -it --name cap-net-raw-demo \
     capabilities-demo \
-    /capabilities-demo raw-socket tap0
+    /capabilities-demo raw-socket eth0
 ```
 
 CAP_NET_RAW is also required when requesting the `SO_BINDTODEVICE` socket
-option.
+option. For this section, you should ssh into the KubeVirt ci node:
+```bash
+$KUBEVIRT_REPO/cluster-up/ssh.sh node01
+
+stty rows 28
+stty columns 146
+sudo groupadd docker
+sudo usermod -aG docker $USER
+
+# the password is `vagrant`
+su vagrant
+```
 
 ```bash
 # attempt to use the socket option SO_BINDTODEVICE without CAP_NET_RAW
-podman run --rm -t \
+docker run --rm -t \
     --name demo-nocaps \
     --cap-drop net_raw \
-    capabilities-demo \
-    /capabilities-demo bind-to-device tap0 --port 800
+    registry:5000/capabilities-demo \
+    /capabilities-demo bind-to-device eth0 --port 800
 
 # attempt to use the socket option SO_BINDTODEVICE *with* CAP_NET_RAW
-podman run --rm -t \
+docker run --rm -t \
     --name demo-with-cap-net-raw \
-    --cap-drop net_raw \
-    capabilities-demo \
-    /capabilities-demo bind-to-device tap0 --port 800
+    --cap-add net_raw \
+    registry:5000/capabilities-demo \
+    /capabilities-demo bind-to-device eth0 --port 800
 ```
 
 ## Abusing CAP_NET_ADMIN ...
@@ -127,11 +142,11 @@ ip l set dev sneaky-veth up
 ip l set dev sneaky-veth-br up
 
 # start the dhcp-server
-podman run --rm -it \
+docker run --rm -it \
     --name dhcp-server \
     --cap-add net_admin \
-    capabilities-demo \
-    /capabilities-demo start-dhcp-server tap0 \
+    registry:5000/capabilities-demo \
+    /capabilities-demo start-dhcp-server eth0 \
         --cidr 10.10.10.2/24 \
         --ip-server 10.10.10.1 \
         --ip-router 172.17.0.1
@@ -141,4 +156,31 @@ $ dhclient -v sneaky-veth
 ```
 
 ## Dependencies
-A container engine, like [podman](https://podman.io/).
+Git
+Golang
+KubeVirt CI node running
+
+## How to get KubeVirt ci node running
+Clone the KubeVirt project:
+```bash
+git clone git@github.com:kubevirt/kubevirt.git <kubevirt-repo-path>
+```
+
+Configure the environment:
+```bash
+export KUBEVIRT_PROVIDER=k8s-1.19
+export KUBEVIRT_NUM_NODES=1
+
+make cluster-up && make cluster-sync
+```
+
+Push the locally built container to the KubeVirt CI node:
+```bash
+$ push_registry="localhost:$($KUBEVIRT_REPO/cluster-up/cli.sh ports registry | tr -d '\r')"
+# By default, the KubeVirt ci node container runtime is docker.
+# This must be aligned
+$ CONTAINER_RUNTIME=docker make container-build
+$ docker tag capabilities-demo $push_registry/capabilities-demo
+$ docker push $push_registry/capabilities-demo
+```
+
